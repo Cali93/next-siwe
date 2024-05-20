@@ -9,7 +9,8 @@ export const siweConfig = createSIWEConfig({
     chains: [1],
     statement: "Please sign with your account",
   }),
-  createMessage: ({ address, ...args }: SIWECreateMessageArgs) => formatMessage(args, address),
+  createMessage: ({ address, ...args }: SIWECreateMessageArgs) =>
+    formatMessage({ ...args, iat: new Date().toISOString() }, address),
   getNonce: async () => {
     const nonce = await getCsrfToken()
     if (!nonce) {
