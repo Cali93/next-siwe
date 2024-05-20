@@ -1,26 +1,26 @@
-import { NextAuthOptions } from "next-auth";
-import credentialsProvider from "next-auth/providers/credentials";
-import { getCsrfToken } from "next-auth/react";
-import NextAuth from "next-auth/next";
+import { NextAuthOptions } from "next-auth"
+import credentialsProvider from "next-auth/providers/credentials"
+import { getCsrfToken } from "next-auth/react"
+import NextAuth from "next-auth/next"
 
-import type { SIWESession } from "@web3modal/siwe";
-import { SiweMessage } from "siwe";
+import type { SIWESession } from "@web3modal/siwe"
+import { SiweMessage } from "siwe"
 
 declare module "next-auth" {
   interface Session extends SIWESession {
-    address: string;
-    chainId: number;
+    address: string
+    chainId: number
   }
 }
 
-const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+const nextAuthSecret = process.env.NEXTAUTH_SECRET
 if (!nextAuthSecret) {
-  throw new Error("NEXTAUTH_SECRET is not set");
+  throw new Error("NEXTAUTH_SECRET is not set")
 }
 // Get your projectId on https://cloud.walletconnect.com
-const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
+const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
 if (!projectId) {
-  throw new Error("NEXT_PUBLIC_PROJECT_ID is not set");
+  throw new Error("NEXT_PUBLIC_PROJECT_ID is not set")
 }
 
 const authOptions: NextAuthOptions = {
@@ -44,23 +44,25 @@ const authOptions: NextAuthOptions = {
       async authorize(credentials, req) {
         try {
           if (!credentials?.message) {
-            throw new Error("SiweMessage is undefined");
+            throw new Error("SiweMessage is undefined")
           }
-          const siwe = new SiweMessage(credentials.message);
-          const nonce = await getCsrfToken({ req: { headers: req.headers } });
+          const siwe = new SiweMessage(credentials.message)
+          console.log("siwe", siwe)
+          const nonce = await getCsrfToken({ req: { headers: req.headers } })
           const result = await siwe.verify({
             signature: credentials?.signature || "",
             nonce,
-          });
+          })
           if (result.success) {
             return {
               id: `eip155:${siwe.chainId}:${siwe.address}`,
-            };
+            }
           }
 
-          return null;
+          return null
         } catch (e) {
-          return null;
+          console.log(e)
+          return null
         }
       },
     }),
@@ -71,19 +73,19 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     session({ session, token }) {
       if (!token.sub) {
-        return session;
+        return session
       }
 
-      const [, chainId, address] = token.sub.split(":");
+      const [, chainId, address] = token.sub.split(":")
       if (chainId && address) {
-        session.address = address;
-        session.chainId = parseInt(chainId, 10);
+        session.address = address
+        session.chainId = parseInt(chainId, 10)
       }
 
-      return session;
+      return session
     },
   },
-};
+}
 
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
